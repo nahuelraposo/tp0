@@ -20,7 +20,7 @@ int main(void)
 
 	logger = iniciar_logger();
 
-	//Loggear "soy un log"
+	log_info(logger, "Soy un log!");
 
 	config = leer_config();
 
@@ -46,7 +46,14 @@ int main(void)
 
 t_log* iniciar_logger(void)
 {
+	t_log *logger;
+	logger = log_create("tp0.log","TP0",1,LOG_LEVEL_INFO);
 
+	if(logger == NULL){
+		printf("No se pudo iniciar el logger \n");
+		exit(1);
+	}
+	return logger;
 }
 
 t_config* leer_config(void)
@@ -77,4 +84,7 @@ void paquete(int conexion)
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
 	//Y por ultimo, para cerrar, hay que liberar lo que utilizamos (conexion, log y config) con las funciones de las commons y del TP mencionadas en el enunciado
+	if(logger != NULL){
+		log_destroy(logger);
+	}
 }
