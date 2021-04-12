@@ -6,6 +6,8 @@
  */
 
 #include "tp0.h"
+#include "utils.h"
+#include <readline/readline.h>
 
 int main(void)
 {
@@ -32,8 +34,6 @@ int main(void)
 	log_info(logger,"Lei el puerto:%s\n",puerto);
 	log_info(logger,"Lei la clave: %s\n",valor);
 
-	//Loggear valor de config
-
 	leer_consola(logger);
 
 
@@ -41,12 +41,10 @@ int main(void)
 
 	//antes de continuar, tenemos que asegurarnos que el servidor esté corriendo porque lo necesitaremos para lo que sigue.
 
-	crear_conexion(ip,puerto);
 	//crear conexion
-
-	//enviar CLAVE al servirdor
-
-	paquete(conexion);
+	conexion = crear_conexion(ip,puerto);
+	//enviar CLAVE al servidor
+	enviar_mensaje(valor,conexion);
 
 	terminar_programa(conexion, logger, config);
 }
@@ -78,9 +76,13 @@ void leer_consola(t_log* logger)
 {
 	char* leido;
 
-	//El primero te lo dejo de yapa
-	leido = readline(">");
+	while(strncmp(leido, "",1)!=0){
+		log_info(logger,leido);
+		free(leido);
+		leido = readline(">");
+	}
 
+	free(leido);
 
 }
 
@@ -96,7 +98,7 @@ void paquete(int conexion)
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
-	//Y por ultimo, para cerrar, hay que liberar lo que utilizamos (conexion, log y config) con las funciones de las commons y del TP mencionadas en el enunciado
+
 	if(logger != NULL){
 		log_destroy(logger);
 	}
@@ -104,4 +106,6 @@ void terminar_programa(int conexion, t_log* logger, t_config* config)
 	if(config != NULL){
 		config_destroy(config);
 	}
+
+	liberar_conexion(conexion);
 }

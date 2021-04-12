@@ -8,19 +8,22 @@
 #include "utils.h"
 
 
-void* serializar_paquete(t_paquete* paquete, int bytes)
+int* serializar_paquete(t_paquete* paquete, int *bytes)
 {
-	void * magic = malloc(bytes);
-	int desplazamiento = 0;
+	int size_serializado = sizeof(op_code) + sizeof(int) + paquete->buffer->size;
+	void *buffer = malloc(size_serializado);
 
-	memcpy(magic + desplazamiento, &(paquete->codigo_operacion), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, &(paquete->buffer->size), sizeof(int));
-	desplazamiento+= sizeof(int);
-	memcpy(magic + desplazamiento, paquete->buffer->stream, paquete->buffer->size);
-	desplazamiento+= paquete->buffer->size;
+	int bytes_escritos = 0;
 
-	return magic;
+	memcpy(buffer + bytes_escritos, &(paquete->codigo_operacion), sizeof(paquete->codigo_operacion));
+	bytes_escritos += sizeof(paquete->codigo_operacion);
+	memcpy(buffer + bytes_escritos, &(paquete->buffer->size), sizeof(paquete->buffer->size));
+	bytes_escritos += sizeof(paquete->buffer->size);
+	memcpy(buffer + bytes_escritos, paquete->buffer->stream, paquete->buffer->size);
+	bytes_escritos += sizeof(paquete->buffer->size);
+
+	*bytes = size_serializado;
+	return buffer;
 }
 
 int crear_conexion(char *ip, char* puerto)
@@ -52,17 +55,12 @@ void enviar_mensaje(char* mensaje, int socket_cliente)
 	paquete->codigo_operacion = MENSAJE;
 	paquete->buffer = malloc(sizeof(t_buffer));
 	paquete->buffer->size = strlen(mensaje) + 1;
-	paquete->buffer->stream = malloc(paquete->buffer->size);
-	memcpy(paquete->buffer->stream, mensaje, paquete->buffer->size);
+	paquete->buffer->stream = mensaje;
 
-	int bytes = paquete->buffer->size + 2*sizeof(int);
-
-	void* a_enviar = serializar_paquete(paquete, bytes);
-
-	send(socket_cliente, a_enviar, bytes, 0);
-
-	free(a_enviar);
-	eliminar_paquete(paquete);
+	int size_serializado;
+	void* serializado = serializar_paquete(paquete,&size_serializado);
+	send(socket_cliente,serializado,size_serializado,0);
+	free(serializado);
 }
 
 
@@ -75,12 +73,11 @@ void crear_buffer(t_paquete* paquete)
 
 t_paquete* crear_super_paquete(void)
 {
-	//me falta un malloc!
-	t_paquete* paquete;
+	t_paquete* paquete = malloc(sizeof(t_paquete));
 
-	//descomentar despues de arreglar
-	//paquete->codigo_operacion = PAQUETE;
-	//crear_buffer(paquete);
+
+	paquete->codigo_operacion = PAQUETE;
+	crear_buffer(paquete);
 	return paquete;
 }
 
@@ -110,6 +107,7 @@ void enviar_paquete(t_paquete* paquete, int socket_cliente)
 	send(socket_cliente, a_enviar, bytes, 0);
 
 	free(a_enviar);
+
 }
 
 void eliminar_paquete(t_paquete* paquete)
